@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>CoffeeGame</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+
+
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105459235', 'ym');
+
+    ym(105459235, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/105459235" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+
+    <style>
+      :root {
+        --ui-scale: 1;
+      }
+
+      @font-face {
+        font-family: "FOO";
+        src: url("TemplateData/foo.otf") format("truetype");
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+        height: 100%;
+        width: 100%;
+      }
+
+      #unity-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      canvas {
+        background: #000;
+        outline: none;
+      }
+
+      /* ================= LOADING OVERLAY ================= */
+
+      #unity-loading-bar {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: url("TemplateData/loading_bg.png") center center no-repeat;
+        background-size: cover;
+        z-index: 9999;
+      }
+
+      /* ===== ГИРЛЯНДА, ЗАГОЛОВОК, КНОПКА — ABSOLUTE ===== */
+
+      /* Гирлянда — прижата к самому верху */
+      #loading-garland {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -40%); /* сдвиг вверх, чтобы убрать пустой хвост PNG */
+
+        width: calc(1200px * var(--ui-scale));
+        max-width: 150%;
+        height: auto;
+
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      /* Заголовок FARMERS COFFEE — ниже, поверх гирлянды */
+      #loading-title-img {
+        position: absolute;
+        top: 27%;
+        left: 50%;
+        transform: translate(-50%, -100%);
+
+        width: calc(780px * var(--ui-scale));
+        max-width: 92%;
+        height: auto;
+
+        z-index: 2;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      /* Кнопка/слайдер ЗАГРУЗКА... — снизу */
+      #loading-button {
+        position: absolute;
+        bottom: 7%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+      }
+
+      #loading-button-inner {
+        position: relative;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #dc7601, #8e3600);
+        box-shadow: 0 6px 0 #c76619, 0 0 16px rgba(0, 0, 0, 0.6);
+      }
+
+      #loading-button-bg {
+        position: relative;
+        border-radius: 999px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #46e0ff, #0091ff);
+        padding: 18px 64px;
+        min-width: 150px;
+        text-align: center;
+        box-shadow: inset 0 4px 0 rgba(255,255,255,0.35);
+      }
+
+      #loading-progress-fill {
+        position: absolute;
+        left: 0; top: 0;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0.95),
+          rgba(255,255,255,0)
+        );
+        opacity: 0.7;
+        mix-blend-mode: screen;
+        pointer-events: none;
+      }
+
+      /* Картинка с текстом "ЗАГРУЗКА..." внутри кнопки */
+      #loading-text-img {
+        position: relative;
+        z-index: 2;
+        display: block;
+        width: calc(360px * var(--ui-scale)); /* подгони под свой PNG */
+        max-width: 100%;
+        height: auto;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="unity-container">
+      <canvas id="unity-canvas" width="960" height="600"></canvas>
+
+      <div id="unity-loading-bar">
+
+        <!-- ГИРЛЯНДА -->
+        <img id="loading-garland" src="TemplateData/garland_top.png" alt="garland">
+
+        <!-- ЗАГОЛОВОК FARMERS COFFEE -->
+        <img id="loading-title-img" src="TemplateData/title_top.png" alt="title">
+
+        <!-- КНОПКА-СЛАЙДЕР -->
+        <div id="loading-button">
+          <div id="loading-button-inner">
+            <div id="loading-button-bg">
+              <div id="loading-progress-fill"></div>
+
+              <!-- КАРТИНКА С ТЕКСТОМ "ЗАГРУЗКА..." -->
+              <img id="loading-text-img" src="TemplateData/loading_text.png" alt="ЗАГРУЗКА...">
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="unity-warning"></div>
+    </div>
+
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+
+      function updateLoadingUiScale() {
+        var rect = canvas.getBoundingClientRect();
+        var baseHeight = 1280;
+        var scale = rect.height / baseHeight;
+
+        if (scale > 1) scale = 1;
+        if (scale < 0.7) scale = 0.7;
+
+        document.documentElement.style.setProperty("--ui-scale", scale);
+      }
+
+      function resizeDesktopCanvas() {
+        const ratio = 9 / 16;
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+
+        let h = wh;
+        let w = wh * ratio;
+
+        if (w > ww) {
+          w = ww;
+          h = ww / ratio;
+        }
+
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+
+        updateLoadingUiScale();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/10.loader.js";
+
+      var config = {
+        dataUrl: buildUrl + "/10.data.unityweb",
+        frameworkUrl: buildUrl + "/10.framework.js.unityweb",
+        codeUrl: buildUrl + "/10.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "CoffeeGame",
+        productVersion: "1.0"
+      };
+
+      resizeDesktopCanvas();
+      window.addEventListener("resize", resizeDesktopCanvas);
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+
+      script.onload = () => {
+        createUnityInstance(canvas, config, progress => {
+          document.getElementById("loading-progress-fill").style.width =
+            (progress * 100) + "%";
+        })
+        .then(() => {
+          document.getElementById("unity-loading-bar").style.display = "none";
+        })
+        .catch(msg => alert(msg));
+      };
+
+      document.body.appendChild(script);
+
+      window.addEventListener("load", updateLoadingUiScale);
+    </script>
+  </body>
+</html>
