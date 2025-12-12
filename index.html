@@ -2,6 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>CoffeeGame</title>
 
@@ -45,6 +46,7 @@
       #unity-container {
         width: 100%;
         height: 100vh;
+        height: 100dvh;
         position: relative;
         display: flex;
         justify-content: center;
@@ -164,7 +166,7 @@
 
   <body>
     <div id="unity-container">
-      <canvas id="unity-canvas" width="960" height="600"></canvas>
+      <canvas id="unity-canvas"></canvas>
 
       <div id="unity-loading-bar">
 
@@ -206,6 +208,15 @@
         document.documentElement.style.setProperty("--ui-scale", scale);
       }
 
+      function isMobileLayout() {
+        // Prefer capability-based checks. UA is fallback.
+        try {
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
+          if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return true;
+        } catch (e) {}
+        return /Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i.test(navigator.userAgent || "");
+      }
+
       function resizeDesktopCanvas() {
         const ratio = 9 / 16;
         const ww = window.innerWidth;
@@ -219,10 +230,40 @@
           h = ww / ratio;
         }
 
+        // Centering is handled by #unity-container flex.
         canvas.style.width = w + "px";
         canvas.style.height = h + "px";
 
+        // Keep render buffer sharp on desktop.
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+
         updateLoadingUiScale();
+      }
+
+      function resizeMobileCanvas() {
+        const vv = window.visualViewport;
+        const ww = Math.floor(vv?.width ?? window.innerWidth);
+        const wh = Math.floor(vv?.height ?? window.innerHeight);
+
+        const container = document.getElementById("unity-container");
+        if (container) container.style.height = wh + "px";
+
+        canvas.style.width = ww + "px";
+        canvas.style.height = wh + "px";
+
+        // Keep render buffer sharp on mobile (cap dpr for performance).
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(ww * dpr);
+        canvas.height = Math.floor(wh * dpr);
+
+        updateLoadingUiScale();
+      }
+
+      function resizeCanvas() {
+        if (isMobileLayout()) resizeMobileCanvas();
+        else resizeDesktopCanvas();
       }
 
       var buildUrl = "Build";
@@ -238,8 +279,10 @@
         productVersion: "1.0"
       };
 
-      resizeDesktopCanvas();
-      window.addEventListener("resize", resizeDesktopCanvas);
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+      // visualViewport gives correct height on mobile browsers/Telegram.
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", resizeCanvas);
 
       var script = document.createElement("script");
       script.src = loaderUrl;
